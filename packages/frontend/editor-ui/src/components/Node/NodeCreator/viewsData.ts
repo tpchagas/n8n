@@ -57,15 +57,16 @@ import {
 	AI_CODE_TOOL_LANGCHAIN_NODE_TYPE,
 	AI_WORKFLOW_TOOL_LANGCHAIN_NODE_TYPE,
 	HUMAN_IN_THE_LOOP_CATEGORY,
+	TEMPLATE_CATEGORY_AI,
 } from '@/constants';
-import { useI18n } from '@/composables/useI18n';
+import { useI18n } from '@n8n/i18n';
 import { useNodeTypesStore } from '@/stores/nodeTypes.store';
 import type { SimplifiedNodeType } from '@/Interface';
 import type { INodeTypeDescription, NodeConnectionType, Themed } from 'n8n-workflow';
 import { EVALUATION_TRIGGER_NODE_TYPE, NodeConnectionTypes } from 'n8n-workflow';
 import { useTemplatesStore } from '@/stores/templates.store';
-import type { BaseTextKey } from '@/plugins/i18n';
-import { camelCase } from 'lodash-es';
+import type { BaseTextKey } from '@n8n/i18n';
+import camelCase from 'lodash/camelCase';
 import { useSettingsStore } from '@/stores/settings.store';
 import { useEvaluationStore } from '@/stores/evaluation.store.ee';
 export interface NodeViewItemSection {
@@ -176,8 +177,10 @@ export function AIView(_nodes: SimplifiedNodeType[]): NodeView {
 
 	const websiteCategoryURLParams = templatesStore.websiteTemplateRepositoryParameters;
 	websiteCategoryURLParams.append('utm_user_role', 'AdvancedAI');
-	const websiteCategoryURL =
-		templatesStore.constructTemplateRepositoryURL(websiteCategoryURLParams);
+	const aiTemplatesURL = templatesStore.constructTemplateRepositoryURL(
+		websiteCategoryURLParams,
+		TEMPLATE_CATEGORY_AI,
+	);
 
 	const askAiEnabled = useSettingsStore().isAskAiEnabled;
 	const aiTransformNode = nodeTypesStore.getNodeType(AI_TRANSFORM_NODE_TYPE);
@@ -196,7 +199,7 @@ export function AIView(_nodes: SimplifiedNodeType[]): NodeView {
 					icon: 'box-open',
 					description: i18n.baseText('nodeCreator.aiPanel.linkItem.description'),
 					name: 'ai_templates_root',
-					url: websiteCategoryURL,
+					url: aiTemplatesURL,
 					tag: {
 						type: 'info',
 						text: i18n.baseText('nodeCreator.triggerHelperPanel.manualTriggerTag'),
@@ -255,7 +258,7 @@ export function AINodesView(_nodes: SimplifiedNodeType[]): NodeView {
 				properties: {
 					title: AI_CATEGORY_DOCUMENT_LOADERS,
 					info: getSubcategoryInfo(AI_CATEGORY_DOCUMENT_LOADERS),
-					icon: 'file-import',
+					icon: 'file-input',
 					...getAISubcategoryProperties(NodeConnectionTypes.AiDocument),
 				},
 			},
@@ -343,7 +346,7 @@ export function AINodesView(_nodes: SimplifiedNodeType[]): NodeView {
 				properties: {
 					title: AI_CATEGORY_VECTOR_STORES,
 					info: getSubcategoryInfo(AI_CATEGORY_VECTOR_STORES),
-					icon: 'project-diagram',
+					icon: 'waypoints',
 					...getAISubcategoryProperties(NodeConnectionTypes.AiVectorStore),
 				},
 			},
@@ -571,7 +574,7 @@ export function RegularView(nodes: SimplifiedNodeType[]) {
 				category: CORE_NODES_CATEGORY,
 				properties: {
 					title: FLOWS_CONTROL_SUBCATEGORY,
-					icon: 'code-branch',
+					icon: 'git-branch',
 					sections: [
 						{
 							key: 'popular',
@@ -639,7 +642,7 @@ export function RegularView(nodes: SimplifiedNodeType[]) {
 		type: 'view',
 		properties: {
 			title: i18n.baseText('nodeCreator.triggerHelperPanel.addAnotherTrigger'),
-			icon: 'bolt',
+			icon: 'bolt-filled',
 			description: i18n.baseText('nodeCreator.triggerHelperPanel.addAnotherTriggerDescription'),
 		},
 	});
