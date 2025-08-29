@@ -13,8 +13,6 @@ import replaceStream from 'replacestream';
 import { pipeline } from 'stream/promises';
 import { z } from 'zod';
 
-import { BaseCommand } from './base-command';
-
 import { ActiveExecutions } from '@/active-executions';
 import { ActiveWorkflowManager } from '@/active-workflow-manager';
 import config from '@/config';
@@ -33,7 +31,8 @@ import { ExecutionsPruningService } from '@/services/pruning/executions-pruning.
 import { UrlService } from '@/services/url.service';
 import { WaitTracker } from '@/wait-tracker';
 import { WorkflowRunner } from '@/workflow-runner';
-import { CommunityPackagesConfig } from '@/community-packages/community-packages.config';
+
+import { BaseCommand } from './base-command';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const open = require('open');
@@ -44,12 +43,6 @@ const flagsSchema = z.object({
 		.boolean()
 		.describe(
 			'runs the webhooks via a hooks.n8n.cloud tunnel server. Use only for testing and development!',
-		)
-		.optional(),
-	reinstallMissingPackages: z
-		.boolean()
-		.describe(
-			'Attempts to self heal n8n if packages with nodes are missing. Might drastically increase startup times.',
 		)
 		.optional(),
 });
@@ -178,27 +171,8 @@ export class Start extends BaseCommand<z.infer<typeof flagsSchema>> {
 			scopedLogger.debug(`Host ID: ${this.instanceSettings.hostId}`);
 		}
 
-		const { flags } = this;
-		const communityPackagesConfig = Container.get(CommunityPackagesConfig);
-		// cli flag overrides the config env variable
-		if (flags.reinstallMissingPackages) {
-			if (communityPackagesConfig.enabled) {
-				this.logger.warn(
-					'`--reinstallMissingPackages` is deprecated: Please use the env variable `N8N_REINSTALL_MISSING_PACKAGES` instead',
-				);
-				communityPackagesConfig.reinstallMissing = true;
-			} else {
-				this.logger.warn(
-					'`--reinstallMissingPackages` was passed, but community packages are disabled',
-				);
-			}
-		}
-
-		if (process.env.OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS === 'true') {
-			this.needsTaskRunner = false;
-		}
-
 		await super.init();
+
 		this.activeWorkflowManager = Container.get(ActiveWorkflowManager);
 
 		const isMultiMainEnabled =
@@ -248,6 +222,12 @@ export class Start extends BaseCommand<z.infer<typeof flagsSchema>> {
 		await this.moduleRegistry.initModules();
 
 		if (this.instanceSettings.isMultiMain) {
+			// we instantiate `PrometheusMetricsService` early to register its multi-main event handlers
+			if (this.globalConfig.endpoints.metrics.enable) {
+				const { PrometheusMetricsService } = await import('@/metrics/prometheus-metrics.service');
+				Container.get(PrometheusMetricsService);
+			}
+
 			Container.get(MultiMainSetup).registerEventHandlers();
 		}
 	}

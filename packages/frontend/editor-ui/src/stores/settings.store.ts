@@ -10,11 +10,7 @@ import * as eventsApi from '@n8n/rest-api-client/api/events';
 import * as settingsApi from '@n8n/rest-api-client/api/settings';
 import * as moduleSettingsApi from '@n8n/rest-api-client/api/module-settings';
 import { testHealthEndpoint } from '@n8n/rest-api-client/api/templates';
-import {
-	INSECURE_CONNECTION_WARNING,
-	LOCAL_STORAGE_EXPERIMENTAL_DOCKED_NODE_SETTINGS,
-	LOCAL_STORAGE_EXPERIMENTAL_MIN_ZOOM_NODE_SETTINGS_IN_CANVAS,
-} from '@/constants';
+import { INSECURE_CONNECTION_WARNING } from '@/constants';
 import { STORES } from '@n8n/stores';
 import { UserManagementAuthenticationMethod } from '@/Interface';
 import type { IDataObject, WorkflowSettings } from 'n8n-workflow';
@@ -99,7 +95,7 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const activeModules = computed(() => settings.value.activeModules);
 
 	const isModuleActive = (moduleName: string) => {
-		return activeModules.value.includes(moduleName);
+		return activeModules.value?.includes(moduleName);
 	};
 
 	const partialExecutionVersion = computed<1 | 2>(() => {
@@ -144,6 +140,8 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 	const isMfaFeatureEnabled = computed(() => mfa.value.enabled);
 
 	const isFoldersFeatureEnabled = computed(() => folders.value.enabled);
+
+	const isDataStoreFeatureEnabled = computed(() => isModuleActive('data-table'));
 
 	const areTagsEnabled = computed(() =>
 		settings.value.workflowTagsDisabled !== undefined ? !settings.value.workflowTagsDisabled : true,
@@ -254,6 +252,8 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		rootStore.setEndpointWebhook(fetchedSettings.endpointWebhook);
 		rootStore.setEndpointWebhookTest(fetchedSettings.endpointWebhookTest);
 		rootStore.setEndpointWebhookWaiting(fetchedSettings.endpointWebhookWaiting);
+		rootStore.setEndpointMcp(fetchedSettings.endpointMcp);
+		rootStore.setEndpointMcpTest(fetchedSettings.endpointMcpTest);
 		rootStore.setTimezone(fetchedSettings.timezone);
 		rootStore.setExecutionTimeout(fetchedSettings.executionTimeout);
 		rootStore.setMaxExecutionTimeout(fetchedSettings.maxExecutionTimeout);
@@ -276,8 +276,6 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		await getSettings();
 
 		initialized.value = true;
-
-		await getModuleSettings();
 	};
 
 	const stopShowingSetupPage = () => {
@@ -313,24 +311,6 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		const fetched = await moduleSettingsApi.getModuleSettings(useRootStore().restApiContext);
 		moduleSettings.value = fetched;
 	};
-
-	/**
-	 * (Experimental) Minimum zoom level of the canvas to render node settings in place of nodes, without opening NDV
-	 */
-	const experimental__minZoomNodeSettingsInCanvas = useLocalStorage(
-		LOCAL_STORAGE_EXPERIMENTAL_MIN_ZOOM_NODE_SETTINGS_IN_CANVAS,
-		0,
-		{ writeDefaults: false },
-	);
-
-	/**
-	 * (Experimental) If set to true, show node settings for a selected node in docked pane
-	 */
-	const experimental__dockedNodeSettingsEnabled = useLocalStorage(
-		LOCAL_STORAGE_EXPERIMENTAL_DOCKED_NODE_SETTINGS,
-		false,
-		{ writeDefaults: false },
-	);
 
 	return {
 		settings,
@@ -388,8 +368,6 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		isAskAiEnabled,
 		isAiCreditsEnabled,
 		aiCreditsQuota,
-		experimental__minZoomNodeSettingsInCanvas,
-		experimental__dockedNodeSettingsEnabled,
 		partialExecutionVersion,
 		reset,
 		getTimezones,
@@ -405,5 +383,6 @@ export const useSettingsStore = defineStore(STORES.SETTINGS, () => {
 		isMFAEnforced,
 		activeModules,
 		isModuleActive,
+		isDataStoreFeatureEnabled,
 	};
 });

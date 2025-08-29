@@ -8,10 +8,11 @@ import { useUIStore } from '@/stores/ui.store';
 import { useWorkflowsStore } from '@/stores/workflows.store';
 import { computed } from 'vue';
 
-const { nodeId, isReadOnly, subTitle } = defineProps<{
+const { nodeId, isReadOnly, subTitle, isEmbeddedInCanvas } = defineProps<{
 	nodeId: string;
 	isReadOnly?: boolean;
 	subTitle?: string;
+	isEmbeddedInCanvas?: boolean;
 }>();
 
 defineSlots<{ actions?: {} }>();
@@ -36,6 +37,12 @@ function handleValueChanged(parameterData: IUpdateInformation) {
 	}
 }
 
+function handleDoubleClickHeader() {
+	if (activeNode.value) {
+		ndvStore.setActiveNodeName(activeNode.value.name);
+	}
+}
+
 function handleCaptureWheelEvent(event: WheelEvent) {
 	if (event.ctrlKey) {
 		// If the event is pinch, let it propagate and zoom canvas
@@ -55,7 +62,7 @@ function handleCaptureWheelEvent(event: WheelEvent) {
 		return;
 	}
 
-	// Otherwise, let it scroll the settings pane
+	// Otherwise, let it scroll the pane
 	event.stopImmediatePropagation();
 }
 </script>
@@ -69,10 +76,17 @@ function handleCaptureWheelEvent(event: WheelEvent) {
 		:read-only="isReadOnly"
 		:block-u-i="blockUi"
 		:executable="!isReadOnly"
-		is-embedded-in-canvas
+		:is-embedded-in-canvas="isEmbeddedInCanvas"
 		:sub-title="subTitle"
+		extra-tabs-class-name="nodrag"
+		extra-parameter-wrapper-class-name="nodrag"
+		is-ndv-v2
+		hide-execute
+		:hide-docs="false"
+		hide-sub-connections
 		@value-changed="handleValueChanged"
 		@capture-wheel-body="handleCaptureWheelEvent"
+		@dblclick-header="handleDoubleClickHeader"
 	>
 		<template #actions>
 			<slot name="actions" />
