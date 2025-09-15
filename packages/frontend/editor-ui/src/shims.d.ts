@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 /// <reference types="vite-plugin-comlink/client" />
 
 import type { VNode, ComponentPublicInstance } from 'vue';
@@ -21,7 +22,6 @@ declare global {
 	interface Window {
 		BASE_PATH: string;
 		REST_ENDPOINT: string;
-		sentry?: { dsn?: string; environment: string; release: string; serverName?: string };
 		n8nExternalHooks?: PartialDeep<ExternalHooks>;
 		preventNodeViewBeforeUnload?: boolean;
 		maxPinnedDataSize?: number;
