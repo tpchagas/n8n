@@ -4,7 +4,7 @@ import type { useNDVStore } from '@/stores/ndv.store';
 import type { CompletionResult } from '@codemirror/autocomplete';
 import { createTestingPinia } from '@pinia/testing';
 import { faker } from '@faker-js/faker';
-import { waitFor, within } from '@testing-library/vue';
+import { fireEvent, waitFor, within } from '@testing-library/vue';
 import userEvent from '@testing-library/user-event';
 import type { useNodeTypesStore } from '@/stores/nodeTypes.store';
 import { useSettingsStore } from '@/stores/settings.store';
@@ -15,12 +15,14 @@ import {
 	createMockEnterpriseSettings,
 	createTestNode,
 	createTestWorkflowObject,
+	createTestNodeProperties,
 } from '@/__tests__/mocks';
 import { useWorkflowsStore } from '@/stores/workflows.store';
 import { NodeConnectionTypes, type INodeParameterResourceLocator } from 'n8n-workflow';
 import type { IWorkflowDb, WorkflowListResource } from '@/Interface';
 import { mock } from 'vitest-mock-extended';
 import { ExpressionLocalResolveContextSymbol } from '@/constants';
+import { nextTick } from 'vue';
 
 function getNdvStateMock(): Partial<ReturnType<typeof useNDVStore>> {
 	return {
@@ -73,7 +75,7 @@ vi.mock('@/stores/nodeTypes.store', () => {
 	};
 });
 
-vi.mock('@/plugins/codemirror/completions/datatype.completions', () => {
+vi.mock('@/features/editors/plugins/codemirror/completions/datatype.completions', () => {
 	return {
 		datatypeCompletions: vi.fn(() => mockCompletionResult),
 	};
@@ -237,11 +239,11 @@ describe('ParameterInput.vue', () => {
 		const { container, emitted } = renderComponent({
 			props: {
 				path: 'tag',
-				parameter: {
+				parameter: createTestNodeProperties({
 					displayName: 'Tag',
 					name: 'tag',
 					type: 'string',
-				},
+				}),
 				modelValue: '',
 			},
 		});
@@ -267,11 +269,11 @@ describe('ParameterInput.vue', () => {
 			const { container, emitted } = renderComponent({
 				props: {
 					path: 'tag',
-					parameter: {
+					parameter: createTestNodeProperties({
 						displayName: 'Tag',
 						name: 'tag',
 						type: 'string',
-					},
+					}),
 					modelValue: '',
 				},
 			});
@@ -303,11 +305,11 @@ describe('ParameterInput.vue', () => {
 			const { container, emitted } = renderComponent({
 				props: {
 					path: 'percentage',
-					parameter: {
+					parameter: createTestNodeProperties({
 						displayName: 'Percentage',
 						name: 'percentage',
 						type: 'number',
-					},
+					}),
 					modelValue: 1,
 				},
 			});
@@ -334,12 +336,12 @@ describe('ParameterInput.vue', () => {
 		const { emitted, container } = renderComponent({
 			props: {
 				path: 'columns',
-				parameter: {
+				parameter: createTestNodeProperties({
 					displayName: 'Columns',
 					name: 'columns',
 					type: 'multiOptions',
 					typeOptions: { loadOptionsMethod: 'getColumnsMultiOptions' },
-				},
+				}),
 				modelValue: ['id', 'title'],
 			},
 		});
@@ -359,6 +361,7 @@ describe('ParameterInput.vue', () => {
 		// @ts-expect-error Readonly property
 		mockNodeTypesState.getNodeType = vi.fn().mockReturnValue({
 			displayName: 'Test',
+			properties: [],
 			credentials: [
 				{
 					name: 'openAiApi',
@@ -370,12 +373,12 @@ describe('ParameterInput.vue', () => {
 		const { emitted, container, getByTestId } = renderComponent({
 			props: {
 				path: 'columns',
-				parameter: {
+				parameter: createTestNodeProperties({
 					displayName: 'Columns',
 					name: 'columns',
 					type: 'options',
 					typeOptions: { loadOptionsMethod: 'getColumnsMultiOptions' },
-				},
+				}),
 				modelValue: 'id',
 			},
 		});
@@ -580,11 +583,11 @@ describe('ParameterInput.vue', () => {
 		const { rerender, getByRole, getByTestId } = renderComponent({
 			props: {
 				path: 'name',
-				parameter: {
+				parameter: createTestNodeProperties({
 					displayName: 'Name',
 					name: 'name',
 					type: 'string',
-				},
+				}),
 				modelValue: 'test',
 			},
 		});
@@ -604,11 +607,11 @@ describe('ParameterInput.vue', () => {
 			const { rerender, getByRole, getByTestId } = renderComponent({
 				props: {
 					path: 'name',
-					parameter: {
+					parameter: createTestNodeProperties({
 						displayName: 'Name',
 						name: 'name',
 						type: 'string',
-					},
+					}),
 					modelValue: 'test',
 				},
 			});
@@ -628,11 +631,11 @@ describe('ParameterInput.vue', () => {
 			const { container, emitted } = renderComponent({
 				props: {
 					path: 'textField',
-					parameter: {
+					parameter: createTestNodeProperties({
 						displayName: 'Text Field',
 						name: 'textField',
 						type: 'string',
-					},
+					}),
 					modelValue: '',
 				},
 			});
@@ -675,15 +678,50 @@ describe('ParameterInput.vue', () => {
 			inputNode: { name: 'n1', runIndex: 0, branchIndex: 0 },
 		});
 
-		it('should render mapper', async () => {
+		it('should render mapper when the current value is empty', async () => {
 			const rendered = renderComponent({
 				global: { provide: { [ExpressionLocalResolveContextSymbol]: ctx } },
 				props: {
 					path: 'name',
-					parameter: { displayName: 'Name', name: 'name', type: 'string' },
+					parameter: createTestNodeProperties(),
 					modelValue: '',
 				},
 			});
+
+			await nextTick();
+			await fireEvent.focusIn(rendered.container.querySelector('.parameter-input')!);
+
+			expect(rendered.queryByTestId('ndv-input-panel')).toBeInTheDocument();
+		});
+
+		it('should render mapper when editor type is specified in the parameter', async () => {
+			const rendered = renderComponent({
+				global: { provide: { [ExpressionLocalResolveContextSymbol]: ctx } },
+				props: {
+					path: 'name',
+					parameter: createTestNodeProperties({ typeOptions: { editor: 'sqlEditor' } }),
+					modelValue: 'SELECT 1;',
+				},
+			});
+
+			await nextTick();
+			await fireEvent.focusIn(rendered.container.querySelector('.parameter-input')!);
+
+			expect(rendered.queryByTestId('ndv-input-panel')).toBeInTheDocument();
+		});
+
+		it('should render mapper when the current value is an expression', async () => {
+			const rendered = renderComponent({
+				global: { provide: { [ExpressionLocalResolveContextSymbol]: ctx } },
+				props: {
+					path: 'name',
+					parameter: createTestNodeProperties(),
+					modelValue: '={{$today}}',
+				},
+			});
+
+			await nextTick();
+			await fireEvent.focusIn(rendered.container.querySelector('.parameter-input')!);
 
 			expect(rendered.queryByTestId('ndv-input-panel')).toBeInTheDocument();
 		});
@@ -693,10 +731,13 @@ describe('ParameterInput.vue', () => {
 				global: { provide: { [ExpressionLocalResolveContextSymbol]: ctx } },
 				props: {
 					path: 'name',
-					parameter: { displayName: 'Name', name: 'name', type: 'string', isNodeSetting: true },
+					parameter: createTestNodeProperties({ isNodeSetting: true }),
 					modelValue: '',
 				},
 			});
+
+			await nextTick();
+			await fireEvent.focusIn(rendered.container.querySelector('.parameter-input')!);
 
 			expect(rendered.queryByTestId('ndv-input-panel')).not.toBeInTheDocument();
 		});
@@ -706,10 +747,13 @@ describe('ParameterInput.vue', () => {
 				global: { provide: { [ExpressionLocalResolveContextSymbol]: ctx } },
 				props: {
 					path: 'name',
-					parameter: { displayName: 'Name', name: 'name', type: 'dateTime' },
+					parameter: createTestNodeProperties({ type: 'dateTime' }),
 					modelValue: '',
 				},
 			});
+
+			await nextTick();
+			await fireEvent.focusIn(rendered.container.querySelector('.parameter-input')!);
 
 			expect(rendered.queryByTestId('ndv-input-panel')).not.toBeInTheDocument();
 		});

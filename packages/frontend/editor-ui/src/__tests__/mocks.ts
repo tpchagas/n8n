@@ -11,6 +11,7 @@ import type {
 	INodeTypeDescription,
 	INodeIssues,
 	ITaskData,
+	INodeProperties,
 } from 'n8n-workflow';
 import { FORM_TRIGGER_NODE_TYPE, NodeConnectionTypes, NodeHelpers, Workflow } from 'n8n-workflow';
 import { v4 as uuid } from 'uuid';
@@ -28,7 +29,7 @@ import {
 	STICKY_NODE_TYPE,
 } from '@/constants';
 import type { IExecutionResponse, INodeUi, IWorkflowDb } from '@/Interface';
-import { CanvasNodeRenderType } from '@/types';
+import { CanvasNodeRenderType } from '@/features/canvas/canvas.types';
 import type { FrontendSettings } from '@n8n/api-types';
 import type { ExpressionLocalResolveContext } from '@/types/expressions';
 
@@ -214,6 +215,16 @@ export function createTestNode(node: Partial<INode> = {}): INode {
 		position: [0, 0] as [number, number],
 		parameters: {},
 		...node,
+	};
+}
+
+export function createTestNodeProperties(data: Partial<INodeProperties> = {}): INodeProperties {
+	return {
+		displayName: 'Name',
+		name: 'name',
+		type: 'string',
+		default: '',
+		...data,
 	};
 }
 
