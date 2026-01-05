@@ -237,7 +237,7 @@ export class ProjectService {
 
 		const project = await trx.save(
 			Project,
-			this.projectRepository.create({ ...data, type: 'team' }),
+			this.projectRepository.create({ ...data, type: 'team', creatorId: adminUser.id }),
 		);
 
 		// Link admin
@@ -509,7 +509,6 @@ export class ProjectService {
 	) {
 		await em.insert(
 			ProjectRelation,
-			// @ts-ignore CAT-957
 			relations.map((v) =>
 				this.projectRelationRepository.create({
 					projectId: project.id,

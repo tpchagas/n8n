@@ -81,10 +81,10 @@ const scrollRight = () => scroll(50);
 		]"
 	>
 		<div v-if="scrollPosition > 0" :class="$style.back" @click="scrollLeft">
-			<N8nIcon icon="chevron-left" size="small" />
+			<N8nIcon :class="$style.positionIcon" icon="chevron-left" size="small" />
 		</div>
 		<div v-if="canScrollRight" :class="$style.next" @click="scrollRight">
-			<N8nIcon icon="chevron-right" size="small" />
+			<N8nIcon :class="$style.positionIcon" icon="chevron-right" size="small" />
 		</div>
 		<div ref="tabs" :class="$style.tabs">
 			<div
@@ -198,12 +198,12 @@ const scrollRight = () => scroll(50);
 }
 
 .tab {
-	--active-tab-border-width: 2px;
+	--tabs--tab--border-width--active: 2px;
 	display: flex;
 	align-items: center;
 	gap: var(--spacing--4xs);
 	padding: 0 var(--spacing--sm);
-	padding-bottom: calc(var(--spacing--2xs) + var(--active-tab-border-width));
+	padding-bottom: calc(var(--spacing--2xs) + var(--tabs--tab--border-width--active));
 	font-size: var(--font-size--sm);
 
 	cursor: pointer;
@@ -218,7 +218,7 @@ const scrollRight = () => scroll(50);
 	}
 
 	.modern & {
-		padding-bottom: calc(var(--spacing--xs) + var(--active-tab-border-width));
+		padding-bottom: calc(var(--spacing--xs) + var(--tabs--tab--border-width--active));
 		font-size: var(--font-size--2xs);
 		font-weight: var(--font-weight--bold);
 	}
@@ -235,7 +235,7 @@ const scrollRight = () => scroll(50);
 .activeTab {
 	color: var(--color--primary);
 	padding-bottom: var(--spacing--2xs);
-	border-bottom: var(--color--primary) var(--active-tab-border-width) solid;
+	border-bottom: var(--color--primary) var(--tabs--tab--border-width--active) solid;
 
 	.modern & {
 		padding-bottom: var(--spacing--xs);
@@ -279,7 +279,7 @@ const scrollRight = () => scroll(50);
 
 .button {
 	position: absolute;
-	background-color: var(--color-tabs-arrow-buttons, var(--color--background));
+	background-color: var(--tabs--arrow-buttons--color, var(--color--foreground--tint-2));
 	z-index: 1;
 	height: 24px;
 	width: 10px;
@@ -320,5 +320,9 @@ const scrollRight = () => scroll(50);
 	composes: tab;
 	composes: button;
 	right: 0;
+}
+
+.positionIcon {
+	flex-shrink: 0;
 }
 </style>

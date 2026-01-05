@@ -7,6 +7,8 @@ import {
 	AiFreeCreditsRequestDto,
 	AiBuilderChatRequestDto,
 	AiSessionRetrievalRequestDto,
+	AiSessionMetadataResponseDto,
+	AiTruncateMessagesRequestDto,
 } from '@n8n/api-types';
 import { AuthenticatedRequest } from '@n8n/db';
 import { Body, Get, Licensed, Post, RestController } from '@n8n/decorators';
@@ -54,16 +56,19 @@ export class AiController {
 
 			res.on('close', handleClose);
 
-			const { text, workflowContext, useDeprecatedCredentials } = payload.payload;
+			const { id, text, workflowContext, featureFlags, versionId } = payload.payload;
 			const aiResponse = this.workflowBuilderService.chat(
 				{
+					id,
 					message: text,
 					workflowContext: {
 						currentWorkflow: workflowContext.currentWorkflow,
 						executionData: workflowContext.executionData,
 						executionSchema: workflowContext.executionSchema,
+						expressionValues: workflowContext.expressionValues,
 					},
-					useDeprecatedCredentials,
+					featureFlags,
+					versionId,
 				},
 				req.user,
 				signal,
@@ -226,6 +231,25 @@ export class AiController {
 	}
 
 	@Licensed('feat:aiBuilder')
+	@Post('/sessions/metadata', { rateLimit: { limit: 100 } })
+	async getSessionsMetadata(
+		req: AuthenticatedRequest,
+		_: Response,
+		@Body payload: AiSessionRetrievalRequestDto,
+	): Promise<AiSessionMetadataResponseDto> {
+		try {
+			const metadata = await this.workflowBuilderService.getSessionsMetadata(
+				payload.workflowId,
+				req.user,
+			);
+			return metadata;
+		} catch (e) {
+			assert(e instanceof Error);
+			throw new InternalServerError(e.message, e);
+		}
+	}
+
+	@Licensed('feat:aiBuilder')
 	@Get('/build/credits')
 	async getBuilderCredits(
 		req: AuthenticatedRequest,
@@ -233,6 +257,26 @@ export class AiController {
 	): Promise<AiAssistantSDK.BuilderInstanceCreditsResponse> {
 		try {
 			return await this.workflowBuilderService.getBuilderInstanceCredits(req.user);
+		} catch (e) {
+			assert(e instanceof Error);
+			throw new InternalServerError(e.message, e);
+		}
+	}
+
+	@Licensed('feat:aiBuilder')
+	@Post('/build/truncate-messages', { rateLimit: { limit: 100 } })
+	async truncateMessages(
+		req: AuthenticatedRequest,
+		_: Response,
+		@Body payload: AiTruncateMessagesRequestDto,
+	): Promise<{ success: boolean }> {
+		try {
+			const success = await this.workflowBuilderService.truncateMessagesAfter(
+				payload.workflowId,
+				req.user,
+				payload.messageId,
+			);
+			return { success };
 		} catch (e) {
 			assert(e instanceof Error);
 			throw new InternalServerError(e.message, e);

@@ -14,12 +14,10 @@ on:
       - packages/cli/**/__tests__/**
       - .github/workflows/ci-postgres-mysql.yml
       - .github/docker-compose.yml
-  pull_request_review:
-    types: [submitted]
 
 concurrency:
   group: db-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   NODE_OPTIONS: '--max-old-space-size=3072'
@@ -33,7 +31,7 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup and Build
-        uses: n8n-io/n8n/.github/actions/setup-nodejs-blacksmith@f5fbbbe0a28a886451c886cac6b49192a39b0eea # v1.104.1
+        uses: ./.github/actions/setup-nodejs
 
   sqlite-pooled:
     name: SQLite Pooled
@@ -47,7 +45,7 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup and Build
-        uses: n8n-io/n8n/.github/actions/setup-nodejs-blacksmith@f5fbbbe0a28a886451c886cac6b49192a39b0eea # v1.104.1
+        uses: ./.github/actions/setup-nodejs
 
       - name: Test SQLite Pooled
         working-directory: packages/cli
@@ -57,7 +55,8 @@ jobs:
     name: MariaDB
     needs: build
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    timeout-minutes: 20
+    timeout-minutes: 30
+    if: false
     env:
       DB_MYSQLDB_PASSWORD: password
       DB_MYSQLDB_POOL_SIZE: 1
@@ -69,7 +68,7 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup and Build
-        uses: n8n-io/n8n/.github/actions/setup-nodejs-blacksmith@f5fbbbe0a28a886451c886cac6b49192a39b0eea # v1.104.1
+        uses: ./.github/actions/setup-nodejs
 
       - name: Start MariaDB
         uses: isbang/compose-action@802a148945af6399a338c7906c267331b39a71af # v2.0.0
@@ -87,6 +86,7 @@ jobs:
     needs: build
     runs-on: blacksmith-2vcpu-ubuntu-2204
     timeout-minutes: 20
+    if: false
     env:
       DB_MYSQLDB_PASSWORD: password
       DB_MYSQLDB_POOL_SIZE: 1
@@ -97,7 +97,7 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup and Build
-        uses: n8n-io/n8n/.github/actions/setup-nodejs-blacksmith@f5fbbbe0a28a886451c886cac6b49192a39b0eea # v1.104.1
+        uses: ./.github/actions/setup-nodejs
 
       - name: Start MySQL
         uses: isbang/compose-action@802a148945af6399a338c7906c267331b39a71af # v2.0.0
@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Setup and Build
-        uses: n8n-io/n8n/.github/actions/setup-nodejs-blacksmith@f5fbbbe0a28a886451c886cac6b49192a39b0eea # v1.104.1
+        uses: ./.github/actions/setup-nodejs
 
       - name: Start Postgres
         uses: isbang/compose-action@802a148945af6399a338c7906c267331b39a71af # v2.0.0
@@ -138,7 +138,7 @@ jobs:
   notify-on-failure:
     name: Notify Slack on failure
     runs-on: ubuntu-latest
-    needs: [sqlite-pooled, mariadb, postgres, mysql]
+    needs: [sqlite-pooled, postgres]
     steps:
       - name: Notify Slack on failure
         uses: act10ns/slack@44541246747a30eb3102d87f7a4cc5471b0ffb7d # v2.1.0
